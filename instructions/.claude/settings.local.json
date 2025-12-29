@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./proxy)",
+      "Bash(./chrome.sh:*)",
+      "Bash(tee:*)",
+      "Bash(./cdpcli:*)",
+      "Bash(cat:*)",
+      "Bash(zig build run:*)"
+    ]
+  }
+}
