@@ -260,6 +260,10 @@ Additional steps:
 - Both browsers use the same cached resources from the proxy, making it easier to isolate Lightpanda-specific issues
 - All artifacts are saved in `output/$DOMAIN/$DATE/` for later analysis
 
+## Important: Do Not Change JS Behavior in Proxy Cache
+
+Cached files in `sites/` must **never** have their original behavior modified. You may only edit them to add debug traces (e.g. `console.warn`) for understanding and investigation purposes. If you discover a bug or behavioral issue, the fix must be made in the **Lightpanda browser source code** (`browser/`), not by altering the cached website JS/HTML. The proxy cache must remain a faithful representation of the original website.
+
 ## Debugging Tips
 
 - Use `console.warn()` instead of `console.log()` for debug traces - they're more visible in Lightpanda output
