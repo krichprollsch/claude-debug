@@ -23,6 +23,7 @@ create:
 	docker run -d -ti --name wdebug --user 1001:1001 \
 		--volume './instructions:/debug/instructions'  \
 		--volume '$(BROWSER_DIR):/debug/browser' \
+		--volume '$(HOME)/.claude.json:/home/debug/.claude.json:ro' \
 		wdebug:latest
 
 .PHONY: delete

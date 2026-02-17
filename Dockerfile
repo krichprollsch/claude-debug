@@ -73,5 +73,6 @@ USER debug
 WORKDIR /debug
 VOLUME /debug/browser
 VOLUME /debug/instructions
+VOLUME /home/debug/.claude.json
 
 CMD ["/bin/bash"]
