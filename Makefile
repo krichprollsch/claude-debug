@@ -24,6 +24,7 @@ create:
 		--volume './tools:/debug/tools:ro'  \
 		--volume './notes:/debug/notes'  \
 		--volume './CLAUDE.md:/debug/CLAUDE.md'  \
+		--volume './output:/debug/output'  \
 		--volume '$(BROWSER_DIR):/debug/browser' \
 		--volume '$(HOME)/.claude.json:/home/debug/.claude.json' \
 		--volume '$(HOME)/.claude:/home/debug/.claude' \
