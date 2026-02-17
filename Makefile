@@ -13,25 +13,28 @@ help:
 .PHONY: build
 ## build docker image
 build:
-	docker build -t wdebug:latest .
+	docker build --build-arg UID=$(shell id -u) --build-arg GID=$(shell id -g) -t wdebug:latest .
 
-BROWSER_DIR := '../browser-claude'
+BROWSER_DIR := ../browser-claude
 
 .PHONY: create
 ## create the docker container
 create:
 	docker run -d -ti --name wdebug --user 1001:1001 \
-		--volume './instructions:/debug/instructions'  \
+		--volume './tools:/debug/tools:ro'  \
+		--volume './notes:/debug/notes'  \
+		--volume './CLAUDE.md:/debug/CLAUDE.md'  \
 		--volume '$(BROWSER_DIR):/debug/browser' \
-		--volume '$(HOME)/.claude.json:/home/debug/.claude.json:ro' \
-		wdebug:latest
+		--volume '$(HOME)/.claude.json:/home/debug/.claude.json' \
+		--volume '$(HOME)/.claude:/home/debug/.claude' \
+		 wdebug:latest
 
 .PHONY: delete
 ## delete the docker container
 delete:
 	docker rm wdebug
 
-.PHONY: start
+.PHONY: run
 ## run the container
 run:
 	docker start -i wdebug

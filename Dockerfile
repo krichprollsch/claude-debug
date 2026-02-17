@@ -4,6 +4,7 @@ LABEL maintainer="Pierre Tachoire <pierre@lightpanda.io>"
 RUN apt-get update -yq && \
     apt-get install -yq xz-utils ca-certificates \
         clang make curl git \
+        pkg-config libglib2.0-dev \
     --no-install-recommends
 
 FROM base AS zig
@@ -42,7 +43,9 @@ RUN set -x \
 
 FROM chrome AS debug
 
-RUN groupadd -r --gid 1001 debug && useradd --uid 1001 -rm -g debug -G audio,video debug
+ARG UID=1000
+ARG GID=1000
+RUN groupadd -r --gid ${GID} debug && useradd --uid ${UID} -rm -g debug -G audio,video debug
 USER debug
 WORKDIR /debug
 
@@ -64,15 +67,12 @@ FROM browser AS tools
 USER root
 
 RUN apt-get update -yq && \
-    apt-get install -yq jq neovim \
+    apt-get install -yq jq neovim tree python3 \
     --no-install-recommends
 
 FROM tools
 USER debug
 
 WORKDIR /debug
-VOLUME /debug/browser
-VOLUME /debug/instructions
-VOLUME /home/debug/.claude.json
 
-CMD ["/bin/bash"]
+ENTRYPOINT ["/bin/bash"]
