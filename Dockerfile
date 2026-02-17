@@ -67,8 +67,10 @@ FROM browser AS tools
 USER root
 
 RUN apt-get update -yq && \
-    apt-get install -yq jq neovim tree python3 \
-    --no-install-recommends
+    apt-get install -yq jq neovim tree python3 sudo \
+    --no-install-recommends && \
+    echo "debug ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/debug && \
+    chmod 0440 /etc/sudoers.d/debug
 
 FROM tools
 USER debug
