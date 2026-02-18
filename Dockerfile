@@ -67,10 +67,14 @@ FROM browser AS tools
 USER root
 
 RUN apt-get update -yq && \
-    apt-get install -yq jq neovim tree python3 sudo \
+    apt-get install -yq jq neovim tree python3 sudo nodejs npm \
     --no-install-recommends && \
     echo "debug ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/debug && \
     chmod 0440 /etc/sudoers.d/debug
+
+USER debug
+
+RUN sudo npm install -g js-beautify
 
 FROM tools
 USER debug
