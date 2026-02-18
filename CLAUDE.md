@@ -14,6 +14,16 @@ Lightpanda Browser is an open-source headless browser written in Zig, designed f
 
 The Lightpanda browser codebase is located in the `browser/` directory. This debugging repository also includes a `proxy` binary (a precompiled Go executable) and `cdpcli` tool at the root level.
 
+## Focus and Approach
+
+Your primary goal is to **fix the Lightpanda browser** so it runs correctly with the target website. Follow these principles:
+
+1. **Make small, incremental changes** — Fix one thing at a time. Do not bundle multiple fixes into a single change.
+2. **Plan before coding** — Before making any fix, write a plan into the corresponding `output/<domain>/<YYYYMMDD>/` directory (e.g. `plan.md`) describing what you found, what you intend to change, and why. **Ask the user for validation before implementing.**
+3. **Add missing tests** — When fixing a bug in `browser/`, add or update tests to cover the fixed behavior. Tests ensure regressions are caught early.
+4. **Fixes go in `browser/` only** — Never fix issues by modifying cached site files. The proxy cache must remain faithful to the original website.
+5. **Web API reference** — Use https://developer.mozilla.org/en-US/docs/Web/API as the authoritative reference for web API specifications when implementing or fixing browser features.
+
 ## Debugging Workflow
 
 The typical debugging process:
