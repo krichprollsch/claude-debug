@@ -78,12 +78,15 @@ This organization allows:
 
 ### Start the proxy
 
-Start the proxy in the background listening on `http://127.0.0.1:3000`:
+Start the proxy in the background listening on `http://127.0.0.1:3000`.
+
+Use the Bash tool with `run_in_background: true`:
 ```bash
-./proxy &
+# run_in_background: true
+./tools/proxy
 ```
 
-Or use the Bash tool with `run_in_background: true` when working with Claude Code.
+This returns a task ID. Use `TaskOutput` with `block: false` to check output later.
 
 The proxy will cache all remote data into `sites/`.
 Resources are stored in subdirectories organized by domain.
@@ -92,26 +95,24 @@ You can edit these cached files to debug the results.
 
 ### Start Lightpanda browser
 
-To start the browser, go to `browser/` directory and then run:
+Use the Bash tool with `run_in_background: true` to start Lightpanda:
 ```bash
-zig build -Dprebuilt_v8_path=v8/libc_v8.a run -- serve --log_level debug --http_proxy http://127.0.0.1:3000 --insecure_disable_tls_host_verification
+# run_in_background: true
+cd ./browser && zig build run -- serve --log_level debug --http_proxy http://127.0.0.1:3000 --insecure_disable_tls_host_verification
 ```
 
 To save logs to the output directory:
 ```bash
-# Set up output directory
+# run_in_background: true
 DOMAIN="example.com"
 DATE=$(date +%Y%m%d)
-mkdir -p "../output/$DOMAIN/$DATE"
-
-# Start browser and save logs
-cd browser && zig build -Dprebuilt_v8_path=v8/libc_v8.a run -- serve --log_level debug --http_proxy http://127.0.0.1:3000 --insecure_disable_tls_host_verification 2>&1 | tee "../output/$DOMAIN/$DATE/lightpanda.log" &
-cd ..
+mkdir -p "./output/$DOMAIN/$DATE"
+cd ./browser && zig build run -- serve --log_level debug --http_proxy http://127.0.0.1:3000 --insecure_disable_tls_host_verification 2>&1 | tee "./output/$DOMAIN/$DATE/lightpanda.log"
 ```
 
 The stderr will display internal logs but also the console.log and console.warn messages you added to JavaScript files for debugging.
 
-Use background task to let the browser running while starting other commands.
+**Important:** Lightpanda can take a long time to start due to Zig compilation time. Use `TaskOutput` with `block: false` to check logs and **wait until you see the `server running` message** before attempting to connect with `cdpcli`.
 
 ### Dump a website with cdpcli
 
@@ -143,14 +144,12 @@ To view just the HTML (ignore statistics):
 
 ### Stopping services
 
-To stop background processes:
+Use `TaskStop` with the task ID to stop background processes. Alternatively:
 ```bash
 pkill proxy
 pkill lightpanda
 pkill chrome
 ```
-
-Or use the KillShell tool when working with Claude Code.
 
 ## Comparing with Chrome
 
@@ -158,20 +157,19 @@ To debug behavioral differences between Lightpanda and Chrome, you can run the s
 
 ### Start Chrome with debugging
 
-Start Chrome in the background with CDP enabled:
+Use the Bash tool with `run_in_background: true` to start Chrome with CDP enabled:
 ```bash
-./chrome.sh &
+# run_in_background: true
+./tools/chrome.sh
 ```
 
 To save Chrome logs to the output directory:
 ```bash
-# Set up output directory
+# run_in_background: true
 DOMAIN="example.com"
 DATE=$(date +%Y%m%d)
 mkdir -p "output/$DOMAIN/$DATE"
-
-# Start Chrome and save logs
-./chrome.sh 2>&1 | tee "output/$DOMAIN/$DATE/chrome.log" &
+./tools/chrome.sh 2>&1 | tee "output/$DOMAIN/$DATE/chrome.log"
 ```
 
 Chrome will output to stderr a line containing the WebSocket address:
@@ -179,18 +177,7 @@ Chrome will output to stderr a line containing the WebSocket address:
 DevTools listening on ws://127.0.0.1:9222/devtools/browser/abc123...
 ```
 
-To capture the WebSocket address, you can:
-
-**Option 1: Extract manually from output**
-Look for the line starting with "DevTools listening on" in the stderr output and copy the full `ws://...` URL.
-
-**Option 2: Capture automatically**
-```bash
-WS_URL=$(./chrome.sh 2>&1 | grep -oP 'ws://[^\s]+' | head -1)
-echo $WS_URL
-```
-
-**Option 3: Extract from saved log file**
+To capture the WebSocket address, use `TaskOutput` with `block: false` to read the background task output and extract the `ws://...` URL. Alternatively, extract from the saved log file:
 ```bash
 WS_URL=$(grep -oP 'ws://[^\s]+' "output/$DOMAIN/$DATE/chrome.log" | head -1)
 echo $WS_URL
@@ -198,7 +185,7 @@ echo $WS_URL
 
 Then use the captured address with cdpcli:
 ```bash
-./cdpcli --cdp "$WS_URL" --sleep 5 dump https://example.com
+./tools/cdpcli --cdp "$WS_URL" --sleep 5 dump https://example.com
 ```
 
 Chrome will use the same proxy (`http://127.0.0.1:3000`) as Lightpanda, ensuring both browsers access identical cached resources.
@@ -230,39 +217,30 @@ mkdir -p "output/$DOMAIN/$DATE"
 
 Complete workflow for comparing Lightpanda and Chrome behavior:
 
-```bash
+```
 # 1. Set up output directory
-DOMAIN="example.com"
-DATE=$(date +%Y%m%d)
 mkdir -p "output/$DOMAIN/$DATE"
 
-# 2. Start the proxy (if not already running)
-./proxy &
+# 2. Start the proxy (run_in_background: true)
+./tools/proxy
 
-# 3. Start Lightpanda and save logs
-cd browser && zig build -Dprebuilt_v8_path=v8/libc_v8.a run -- serve --log_level debug --http_proxy http://127.0.0.1:3000 --insecure_disable_tls_host_verification 2>&1 | tee "../output/$DOMAIN/$DATE/lightpanda.log" &
-cd ..
+# 3. Start Lightpanda (run_in_background: true)
+cd ./browser && zig build run -- serve --log_level debug --http_proxy http://127.0.0.1:3000 --insecure_disable_tls_host_verification 2>&1 | tee "./output/$DOMAIN/$DATE/lightpanda.log"
 
 # 4. Dump with Lightpanda
-./cdpcli --sleep 5 dump https://example.com 2> "output/$DOMAIN/$DATE/lightpanda.html"
+./tools/cdpcli --sleep 5 dump https://example.com 2> "output/$DOMAIN/$DATE/lightpanda.html"
 
-# 5. Start Chrome and save logs
-./chrome.sh 2>&1 | tee "output/$DOMAIN/$DATE/chrome.log" &
+# 5. Start Chrome (run_in_background: true)
+./tools/chrome.sh 2>&1 | tee "output/$DOMAIN/$DATE/chrome.log"
 
-# 6. Extract WebSocket URL from Chrome logs
-sleep 2
+# 6. Extract WebSocket URL using TaskOutput (block: false) or from log file
 WS_URL=$(grep -oP 'ws://[^\s]+' "output/$DOMAIN/$DATE/chrome.log" | head -1)
-echo "Chrome WebSocket: $WS_URL"
 
 # 7. Dump with Chrome
-./cdpcli --cdp "$WS_URL" --sleep 5 dump https://example.com 2> "output/$DOMAIN/$DATE/chrome.html"
+./tools/cdpcli --cdp "$WS_URL" --sleep 5 dump https://example.com 2> "output/$DOMAIN/$DATE/chrome.html"
 
 # 8. Compare HTML outputs
 diff -u "output/$DOMAIN/$DATE/chrome.html" "output/$DOMAIN/$DATE/lightpanda.html"
-
-# 9. Review logs for differences
-echo "Lightpanda log: output/$DOMAIN/$DATE/lightpanda.log"
-echo "Chrome log: output/$DOMAIN/$DATE/chrome.log"
 ```
 
 Additional steps:
@@ -292,6 +270,10 @@ Cached files in `sites/` must **never** have their original behavior modified. Y
 - **TLS errors**: The `--insecure_disable_tls_host_verification` flag disables certificate verification for debugging
 - **Page not fully loaded**: Increase the `--sleep` value in cdpcli to allow more time for JavaScript execution
 
-## Lightpanda Browser Architecture
+## Notes & Reference Docs
 
-For detailed information about Lightpanda's internal architecture, components, and development workflow, see [LIGHTPANDA_ARCHITECTURE.md](./LIGHTPANDA_ARCHITECTURE.md).
+Detailed reference material lives in `notes/`:
+
+- [notes/LIGHTPANDA_ARCHITECTURE.md](./notes/LIGHTPANDA_ARCHITECTURE.md) — Internal architecture, core components, memory model, build configuration, and development workflow.
+- [notes/comparing-lp-chrome.md](./notes/comparing-lp-chrome.md) — Quick-reference workflow for comparing Lightpanda vs Chrome output, key gotchas, and a symptom/cause table for common differences.
+- [notes/lightpanda-contribution.md](./notes/lightpanda-contribution.md) — JS bridge patterns (how to expose Zig types to JS), scheduler usage, common patterns for fixing missing Web APIs, and lessons learned from past debug sessions.
