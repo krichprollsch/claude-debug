@@ -26,6 +26,10 @@ RUN curl --fail -L -O https://ziglang.org/download/${ZIG}/zig-${ARCH}-linux-${ZI
     mv zig-${ARCH}-linux-${ZIG} /usr/local/lib && \
     ln -s /usr/local/lib/zig-${ARCH}-linux-${ZIG}/zig /usr/local/bin/zig
 
+# Get Rust
+RUN curl https://sh.rustup.rs -sSf | sh -s -- --profile minimal -y
+ENV PATH="/home/debug/.cargo/bin:${PATH}"
+
 FROM zig AS chrome
 
 # Chrome
@@ -41,6 +45,7 @@ RUN set -x \
     && apt-get install -y google-chrome-stable \
     --no-install-recommends
 
+# setup debug user
 FROM chrome AS debug
 
 ARG UID=1000
@@ -56,14 +61,7 @@ USER debug
 RUN curl -fsSL https://claude.ai/install.sh | bash
 ENV PATH="/home/debug/.local/bin:${PATH}"
 
-FROM claude AS browser
-USER debug
-
-# Get Rust
-RUN curl https://sh.rustup.rs -sSf | sh -s -- --profile minimal -y
-ENV PATH="/home/debug/.cargo/bin:${PATH}"
-
-FROM browser AS tools
+FROM claude AS tools
 USER root
 
 RUN apt-get update -yq && \
