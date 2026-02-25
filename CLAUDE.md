@@ -29,12 +29,14 @@ Your primary goal is to **fix the Lightpanda browser** so it runs correctly with
 The typical debugging process:
 1. Start the proxy to cache website resources locally
 2. Start Lightpanda browser with proxy configuration
-3. Dump the website using cdpcli
+3. Dump the website using cdpcli (simple cases) or a Puppeteer Node.js script (complex scenarios)
 4. Analyze cached files in `sites/` directory
 5. Modify cached HTML/JS files to add debug traces
 6. Re-run to see modified behavior
 
 You can dump a website using `cdpcli` and `proxy` with Lightpanda, then understand and debug how Lightpanda behaves by altering the html and js files cached by `proxy`. Use `console.warn` to introduce debug traces you will be able to view in Lightpanda output.
+
+For more complex interactions — waiting on `networkidle0`, filling forms, clicking links, multi-page navigation — use a Node.js script with `puppeteer-core` instead of `cdpcli`. See [notes/puppeteer-scripts.md](./notes/puppeteer-scripts.md) for setup and patterns.
 
 ## File Locations
 
@@ -114,7 +116,9 @@ The stderr will display internal logs but also the console.log and console.warn 
 
 **Important:** Lightpanda can take a long time to start due to Zig compilation time. Use `TaskOutput` with `block: false` to check logs and **wait until you see the `server running` message** before attempting to connect with `cdpcli`.
 
-### Dump a website with cdpcli
+### Dump a website with cdpcli or Puppeteer
+
+**Simple case — cdpcli:** connect to Lightpanda through CDP, fetch a website and dump the final HTML.
 
 Use the command `./cdpcli` to connect to Lightpanda browser through CDP protocol, fetch a website and dump the final HTML:
 
@@ -141,6 +145,40 @@ To view just the HTML (ignore statistics):
 ```bash
 ./cdpcli --sleep 5 dump https://example.com 2>&1 1>/dev/null
 ```
+
+**Complex case — Puppeteer Node.js script:** when you need `networkidle0` (recommended over fixed sleep), form submission, link clicks, multi-page navigation, or structured data extraction, write a Node.js script using `puppeteer-core`.
+
+Create an npm project in the output subdirectory, install `puppeteer-core`, and connect to Lightpanda's CDP server via the `BROWSER_ADDRESS` env var (defaults to `ws://127.0.0.1:9222`):
+
+```js
+import puppeteer from 'puppeteer-core';
+
+const browser = await puppeteer.connect({
+    browserWSEndpoint: process.env.BROWSER_ADDRESS ?? 'ws://127.0.0.1:9222',
+});
+const context = await browser.createBrowserContext();
+const page = await context.newPage();
+
+await page.goto('https://example.com', { waitUntil: 'networkidle0', timeout: 10000 });
+const html = await page.content();
+console.log(html);
+
+await page.close();
+await context.close();
+await browser.disconnect();
+```
+
+Run against Lightpanda or Chrome without changing the script:
+
+```bash
+# Lightpanda (default)
+node script.js
+
+# Chrome — pass its CDP WebSocket URL from chrome.sh output
+BROWSER_ADDRESS="ws://127.0.0.1:9222/devtools/browser/<id>" node script.js
+```
+
+See [notes/puppeteer-scripts.md](./notes/puppeteer-scripts.md) for full setup instructions, common patterns (forms, clicks, data extraction), Chrome comparison workflow, and example references from the Lightpanda demo repository.
 
 ### Stopping services
 
@@ -277,3 +315,4 @@ Detailed reference material lives in `notes/`:
 - [notes/LIGHTPANDA_ARCHITECTURE.md](./notes/LIGHTPANDA_ARCHITECTURE.md) — Internal architecture, core components, memory model, build configuration, and development workflow.
 - [notes/comparing-lp-chrome.md](./notes/comparing-lp-chrome.md) — Quick-reference workflow for comparing Lightpanda vs Chrome output, key gotchas, and a symptom/cause table for common differences.
 - [notes/lightpanda-contribution.md](./notes/lightpanda-contribution.md) — JS bridge patterns (how to expose Zig types to JS), scheduler usage, common patterns for fixing missing Web APIs, and lessons learned from past debug sessions.
+- [notes/puppeteer-scripts.md](./notes/puppeteer-scripts.md) — How to write Node.js/puppeteer-core scripts for complex scenarios: networkidle0, form filling, link clicking, multi-page navigation, structured data extraction.
