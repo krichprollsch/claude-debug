@@ -7,4 +7,5 @@ google-chrome --remote-debugging-address=0.0.0.0 \
     --user-data-dir=/tmp/chrome-tmp \
     --headless=new \
     --no-sandbox \
+    --disable-web-security \
     --proxy-server=http://127.0.0.1:3000 --ignore-certificate-errors
