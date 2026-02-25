@@ -66,6 +66,7 @@ USER root
 
 RUN apt-get update -yq && \
     apt-get install -yq jq neovim tree python3 sudo nodejs npm \
+    python3-bs4 \
     --no-install-recommends && \
     echo "debug ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/debug && \
     chmod 0440 /etc/sudoers.d/debug

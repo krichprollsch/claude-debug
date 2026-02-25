@@ -51,8 +51,43 @@ echo $WS_URL
 ```
 
 ### 7. Compare
-```bash
-diff -u output/$DOMAIN/$DATE/chrome.html output/$DOMAIN/$DATE/lightpanda.html | head -100
+
+**Avoid plain `diff`** — HTML dumps are typically a single minified line, making diff output
+huge and unreadable.
+
+Use the Python structural comparison script instead (`python3-bs4` is available):
+
+```python
+from bs4 import BeautifulSoup
+
+def load_html(path, skip_errors=False):
+    with open(path, encoding='utf-8') as f:
+        lines = f.readlines()
+    if skip_errors:
+        # cdpcli prepends error lines before the HTML; skip them
+        start = next(i for i, l in enumerate(lines) if l.startswith('<html'))
+        lines = lines[start:]
+    return BeautifulSoup(''.join(lines), 'html.parser')
+
+lp   = load_html(f'output/{DOMAIN}/{DATE}/lightpanda.html')
+chrome = load_html(f'output/{DOMAIN}/{DATE}/chrome.html', skip_errors=True)
+
+# Compare element counts
+print(f"LP tags: {len(lp.find_all(True))}, Chrome tags: {len(chrome.find_all(True))}")
+
+# Compare attributes on ID'd elements
+lp_els     = {el['id']: el for el in lp.find_all(True)     if el.get('id')}
+chrome_els = {el['id']: el for el in chrome.find_all(True) if el.get('id')}
+
+for id_ in sorted(set(lp_els) & set(chrome_els)):
+    lp_attrs     = {k: str(v) for k, v in lp_els[id_].attrs.items()}
+    chrome_attrs = {k: str(v) for k, v in chrome_els[id_].attrs.items()}
+    if lp_attrs != chrome_attrs:
+        print(f"\nID: {id_}")
+        for attr in sorted(set(lp_attrs) | set(chrome_attrs)):
+            lv, cv = lp_attrs.get(attr,'[MISSING]'), chrome_attrs.get(attr,'[MISSING]')
+            if lv != cv:
+                print(f"  {attr}: chrome={cv[:80]} | lp={lv[:80]}")
 ```
 
 Or count specific patterns:
@@ -76,6 +111,14 @@ grep -c 'opacity:0'         output/$DOMAIN/$DATE/lightpanda.html
   The proxy binds port 3000 — if it's already running, the new one exits with code 1.
 - **Zig build is cached** — if no `.zig` source files changed, `zig build run` starts
   instantly (output will say "ninja: no work to do" and skip straight to "server running").
+- **Chrome's output file contains leading error lines** — cdpcli may write `ERROR: could not
+  unmarshal event: ...` lines to stderr before the HTML. When loading with BeautifulSoup,
+  skip lines until the first one starting with `<html` (see comparison script above).
+- **UTF-8 encoding** — open HTML files with `encoding='utf-8'` in Python, otherwise French
+  and other non-ASCII characters appear garbled (`RÃ©` instead of `Ré`) and create false
+  attribute differences.
+- **Minified HTML = single line** — plain `diff` is essentially useless. Always use
+  structural/parsed comparison.
 
 ---
 
@@ -106,3 +149,4 @@ Common Lightpanda vs Chrome differences:
 | `element.style.opacity` returns `undefined` | `isKnownCSSProperty` list incomplete |
 | `element.style['filter'] = value` silently no-ops | `CSSStyleProperties.setNamed` was null |
 | Subscriber callbacks not firing after `motionValue.set()` | Check if `requestAnimationFrame` or scheduler interaction is involved |
+| Attribute present in source HTML but missing in LP dump | JS likely removes it intentionally (e.g. `data-wire` removed by WireUp processor after processing); check timing relative to `--sleep` value |
