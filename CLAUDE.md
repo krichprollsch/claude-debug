@@ -44,6 +44,8 @@ For more complex interactions — waiting on `networkidle0`, filling forms, clic
 - `tools/cdpcli` - CDP client tool for dumping websites (root directory)
 - `tools/chrome.sh` - Script to start Chrome with debugging enabled (root directory)
 - `browser/` - Lightpanda browser source code
+- `demo/` - Scripts examples for puppeteer, playwright, chromedp scenarios
+- `wpt/` - WPT test suite
 - `notes/` - Your notes - Update / Add your own notes into this dir
 - `sites/` - Cached website resources (created by proxy)
   - Organized by domain subdirectories
@@ -308,6 +310,28 @@ Cached files in `sites/` must **never** have their original behavior modified. Y
 - **TLS errors**: The `--insecure_disable_tls_host_verification` flag disables certificate verification for debugging
 - **Page not fully loaded**: Increase the `--sleep` value in cdpcli to allow more time for JavaScript execution
 
+## Running Web Platform Tests (WPT)
+
+Lightpanda is tested against the standardized [Web Platform Tests](https://web-platform-tests.org/). The WPT repo is already cloned at `wpt/` (manifest generated, hosts installed). The runner binary is at `tools/wptrunner`.
+
+Quick start:
+
+```bash
+# 1. Start WPT HTTP server (run_in_background: true)
+cd wpt && python3 wpt serve
+
+# 2. Start Lightpanda (run_in_background: true)
+cd browser && zig build run -- serve --insecure_disable_tls_host_verification
+
+# 3. Run a specific test
+tools/wptrunner Node-childNodes.html
+
+# 3b. Run full suite with summary (takes a long time)
+tools/wptrunner -summary
+```
+
+See [notes/wpt-tests.md](./notes/wpt-tests.md) for full details (all options, tips, environment variables).
+
 ## Notes & Reference Docs
 
 Detailed reference material lives in `notes/`:
@@ -316,3 +340,4 @@ Detailed reference material lives in `notes/`:
 - [notes/comparing-lp-chrome.md](./notes/comparing-lp-chrome.md) — Quick-reference workflow for comparing Lightpanda vs Chrome output, key gotchas, and a symptom/cause table for common differences.
 - [notes/lightpanda-contribution.md](./notes/lightpanda-contribution.md) — JS bridge patterns (how to expose Zig types to JS), scheduler usage, common patterns for fixing missing Web APIs, and lessons learned from past debug sessions.
 - [notes/puppeteer-scripts.md](./notes/puppeteer-scripts.md) — How to write Node.js/puppeteer-core scripts for complex scenarios: networkidle0, form filling, link clicking, multi-page navigation, structured data extraction.
+- [notes/wpt-tests.md](./notes/wpt-tests.md) — How to run Web Platform Tests: setup, wptrunner options, environment variables, and tips.
