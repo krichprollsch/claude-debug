@@ -26,10 +26,6 @@ RUN curl --fail -L -O https://ziglang.org/download/${ZIG}/zig-${ARCH}-linux-${ZI
     mv zig-${ARCH}-linux-${ZIG} /usr/local/lib && \
     ln -s /usr/local/lib/zig-${ARCH}-linux-${ZIG}/zig /usr/local/bin/zig
 
-# Get Rust
-RUN curl https://sh.rustup.rs -sSf | sh -s -- --profile minimal -y
-ENV PATH="/home/debug/.cargo/bin:${PATH}"
-
 FROM zig AS chrome
 
 # Chrome
@@ -72,6 +68,10 @@ RUN apt-get update -yq && \
     chmod 0440 /etc/sudoers.d/debug
 
 USER debug
+
+# Get Rust
+RUN curl https://sh.rustup.rs -sSf | sh -s -- --profile minimal -y
+ENV PATH="/home/debug/.cargo/bin:${PATH}"
 
 RUN sudo npm install -g js-beautify
 
