@@ -61,7 +61,7 @@ FROM claude AS tools
 USER root
 
 RUN apt-get update -yq && \
-    apt-get install -yq jq neovim tree python3 sudo nodejs npm \
+    apt-get install -yq jq neovim tree python3 python3-venv sudo nodejs npm \
     python3-bs4 \
     --no-install-recommends && \
     echo "debug ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/debug && \
@@ -79,5 +79,10 @@ FROM tools
 USER debug
 
 WORKDIR /debug
+
+# Get wpt
+RUN git clone -b fork --depth=1 https://github.com/lightpanda-io/wpt.git && \
+    cd wpt && \
+    ./wpt manifest
 
 ENTRYPOINT ["/bin/bash"]

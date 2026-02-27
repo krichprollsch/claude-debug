@@ -29,7 +29,6 @@ create:
 		--volume './output:/debug/output'  \
 		--volume '$(BROWSER_DIR):/debug/browser' \
 		--volume '$(DEMO_DIR):/debug/demo' \
-		--volume '$(WPT_DIR):/debug/wpt' \
 		--volume '$(HOME)/.claude.json:/home/debug/.claude.json' \
 		--volume '$(HOME)/.claude:/home/debug/.claude' \
 		--add-host not-web-platform.test=127.0.0.1 \
