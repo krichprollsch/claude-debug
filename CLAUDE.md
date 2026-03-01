@@ -320,10 +320,14 @@ Quick start:
 # 1. Start WPT HTTP server (run_in_background: true)
 cd wpt && python3 wpt serve
 
-# 2. Start Lightpanda (run_in_background: true)
+# 2a. Run a single test directly (no CDP server needed) — fastest for debugging
+cd browser && zig build run -- fetch --dump wpt "http://web-platform.test:8000/dom/nodes/CharacterData-appendChild.html"
+# Outputs JSON to stdout with per-subtest pass/fail/message. Logs go to stderr.
+
+# 2b. Or start Lightpanda as a CDP server to use wptrunner (run_in_background: true)
 cd browser && zig build run -- serve --insecure_disable_tls_host_verification
 
-# 3. Run a specific test
+# 3. Run a specific test with wptrunner
 tools/wptrunner Node-childNodes.html
 
 # 3b. Run full suite with summary (takes a long time)

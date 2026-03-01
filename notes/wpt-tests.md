@@ -22,7 +22,25 @@ cd /debug/wpt && python3 wpt serve
 
 Wait until you see the server is listening (check with `TaskOutput block: false`). The default address is `http://web-platform.test:8000`.
 
-### 2. Start Lightpanda
+### 2a. Run a single test directly (recommended for debugging)
+
+No CDP server needed — the browser runs, fetches the page, executes JS, and exits:
+
+```bash
+cd /debug/browser && zig build run -- fetch --dump wpt "http://web-platform.test:8000/dom/nodes/CharacterData-appendChild.html"
+```
+
+- **stdout**: JSON output with summary and per-subtest `name`/`status`/`message`
+- **stderr**: internal browser logs (INFO, WARN, errors)
+
+To see only the JSON result:
+```bash
+cd /debug/browser && zig build run -- fetch --dump wpt "http://web-platform.test:8000/xhr/responsetext-decoding.htm" 2>/dev/null
+```
+
+This is the fastest way to check a single test while fixing a bug — no background processes to manage.
+
+### 2b. Start Lightpanda as a CDP server (needed for wptrunner)
 
 Use `run_in_background: true`:
 
@@ -88,6 +106,7 @@ Environment variables `WPT_ADDR`, `CDP_WS`, and `LPD_PATH` can also be used.
 
 ## Tips
 
+- **Single test debugging**: prefer `zig build run -- fetch --dump wpt "URL"` over wptrunner — no CDP server needed, JSON output directly in stdout, much faster iteration.
 - Use `-lpd-path` to let wptrunner auto-restart Lightpanda if it crashes during the suite.
 - You can browse any WPT test case interactively at [wpt.live](https://wpt.live).
 - The WPT fork includes a custom [`testharnessreport.js`](https://github.com/lightpanda-io/wpt/commit/01a3115c076a3ad0c84849dbbf77a6e3d199c56f) for Lightpanda integration.
