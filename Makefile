@@ -15,6 +15,8 @@ help:
 build:
 	docker build --build-arg UID=$(shell id -u) --build-arg GID=$(shell id -g) -t wdebug:latest .
 
+CONTAINER_NAME ?= wdebug
+
 BROWSER_DIR := ../browser-claude
 DEMO_DIR := ../demo
 WPT_DIR := ../wpt
@@ -22,7 +24,7 @@ WPT_DIR := ../wpt
 .PHONY: create
 ## create the docker container
 create:
-	docker run -d -ti --name wdebug --user 1001:1001 \
+	docker run -d -ti --name $(CONTAINER_NAME) --user 1001:1001 \
 		--volume './tools:/debug/tools:ro'  \
 		--volume './notes:/debug/notes'  \
 		--volume './CLAUDE.md:/debug/CLAUDE.md'  \
@@ -98,9 +100,9 @@ create:
 .PHONY: delete
 ## delete the docker container
 delete:
-	docker rm wdebug
+	docker rm $(CONTAINER_NAME)
 
 .PHONY: run
 ## run the container
 run:
-	docker start -i wdebug
+	docker start -i $(CONTAINER_NAME)
