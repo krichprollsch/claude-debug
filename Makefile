@@ -18,7 +18,7 @@ build:
 CONTAINER_NAME ?= wdebug
 
 BROWSER_DIR := ../browser-claude
-DEMO_DIR := ../demo
+DEMO_DIR := ../demo-claude
 WPT_DIR := ../wpt
 
 .PHONY: create
