@@ -167,6 +167,28 @@ See the Lightpanda demo repository for ready-to-use examples:
 - https://github.com/lightpanda-io/demo/tree/main/puppeteer — basic navigation, form submission, link clicking, network wait, cookies, frames, request interception
 - https://github.com/lightpanda-io/demo/tree/main/integration — real-world site scenarios (Hacker News, DuckDuckGo, GitHub, Wikipedia, etc.)
 
+## Sending Raw CDP Commands
+
+Use `page._client()` to get the underlying CDP session and send raw commands:
+
+```js
+const client = page._client();
+await client.send('Network.enable');
+
+client.on('Network.responseReceived', (event) => {
+    console.log(event.response.url, event.response.status);
+});
+
+const { body } = await client.send('Network.getResponseBody', { requestId });
+```
+
+Alternatively, create a dedicated CDP session with `page.createCDPSession()`:
+
+```js
+const cdp = await page.createCDPSession();
+await cdp.send('Network.enable');
+```
+
 ## Tips
 
 - Always `await browser.disconnect()` at the end — do not call `browser.close()` since you are connected to an external process.
