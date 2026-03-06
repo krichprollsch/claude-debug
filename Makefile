@@ -13,7 +13,7 @@ help:
 .PHONY: build
 ## build docker image
 build:
-	docker build --build-arg UID=$(shell id -u) --build-arg GID=$(shell id -g) -t wdebug:latest .
+	docker build $(OPTS) --build-arg UID=$(shell id -u) --build-arg GID=$(shell id -g) -t wdebug:latest .
 
 CONTAINER_NAME ?= wdebug
 
