@@ -65,6 +65,25 @@ The `build.zig` file:
 - Configures extensive curl feature flags (many protocols disabled)
 - Links BoringSSL for TLS
 
+### Prebuilt V8 (`-Dprebuilt_v8_path`)
+
+Building V8 from source takes 10+ min. `make download-v8` fetches the matching
+prebuilt `libc_v8_<version>_<os>_<arch>.a` from the
+[zig-v8-fork releases](https://github.com/lightpanda-io/zig-v8-fork/releases)
+into `.lp-cache/prebuilt-v8/`. Versions are derived from
+`.github/actions/install/action.yml` so they can't drift from CI.
+See [PR #2517](https://github.com/lightpanda-io/browser/pull/2517).
+
+- `make <target>` (build-dev, test, run, …): auto-detects the cache and injects
+  `-Dprebuilt_v8_path=...` into `ZIGFLAGS`. No manual flag needed.
+- Raw `zig build`: pass `-Dprebuilt_v8_path=<absolute path to libc_v8.a>` yourself.
+  ```bash
+  V8_PREBUILT=$(ls .lp-cache/prebuilt-v8/libc_v8_*.a | head -1)
+  zig build -Dprebuilt_v8_path="$V8_PREBUILT" run -- serve
+  ```
+- The build option is defined in `build.zig` (`prebuilt_v8_path`) and is wired
+  through `linkV8(...)` — when set, V8 is linked from the archive instead of compiled.
+
 ## Development Workflow
 
 1. **Initial setup:**

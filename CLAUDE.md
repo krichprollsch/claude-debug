@@ -97,12 +97,35 @@ Resources are stored in subdirectories organized by domain.
 
 You can edit these cached files to debug the results.
 
+### Build Lightpanda with prebuilt V8 (skip the 10+ min V8 build)
+
+Building V8 from source takes 10+ minutes. Use `make download-v8` (from `browser/`)
+to fetch the matching prebuilt archive into `.lp-cache/prebuilt-v8/` — see
+[PR #2517](https://github.com/lightpanda-io/browser/pull/2517).
+
+```bash
+cd ./browser && make download-v8
+```
+
+After download, two ways to use it:
+
+- **Via `make` targets** (`make build-dev`, `make test`, `make run`, …): the Makefile
+  auto-detects `.lp-cache/prebuilt-v8/<archive>` and injects `-Dprebuilt_v8_path=...`
+  into `ZIGFLAGS` for you. No flag needed.
+- **Via raw `zig build`**: you MUST pass `-Dprebuilt_v8_path=<absolute path to libc_v8.a>`
+  explicitly. Compute the path from `.lp-cache/prebuilt-v8/libc_v8_<version>_<os>_<arch>.a`
+  (e.g. `libc_v8_14.0.365.4_linux_x86_64.a`). A quick shell helper:
+  ```bash
+  V8_PREBUILT=$(ls /debug/browser/.lp-cache/prebuilt-v8/libc_v8_*.a | head -1)
+  ```
+
 ### Start Lightpanda browser
 
 Use the Bash tool with `run_in_background: true` to start Lightpanda:
 ```bash
 # run_in_background: true
-cd ./browser && zig build run -- serve --log_level debug --http_proxy http://127.0.0.1:3000 --insecure_disable_tls_host_verification
+V8_PREBUILT=$(ls /debug/browser/.lp-cache/prebuilt-v8/libc_v8_*.a | head -1)
+cd ./browser && zig build -Dprebuilt_v8_path="$V8_PREBUILT" run -- serve --log_level debug --http_proxy http://127.0.0.1:3000 --insecure_disable_tls_host_verification
 ```
 
 To save logs to the output directory:
@@ -111,7 +134,8 @@ To save logs to the output directory:
 DOMAIN="example.com"
 DATE=$(date +%Y%m%d)
 mkdir -p "./output/$DOMAIN/$DATE"
-cd ./browser && zig build run -- serve --log_level debug --http_proxy http://127.0.0.1:3000 --insecure_disable_tls_host_verification 2>&1 | tee "./output/$DOMAIN/$DATE/lightpanda.log"
+V8_PREBUILT=$(ls /debug/browser/.lp-cache/prebuilt-v8/libc_v8_*.a | head -1)
+cd ./browser && zig build -Dprebuilt_v8_path="$V8_PREBUILT" run -- serve --log_level debug --http_proxy http://127.0.0.1:3000 --insecure_disable_tls_host_verification 2>&1 | tee "./output/$DOMAIN/$DATE/lightpanda.log"
 ```
 
 The stderr will display internal logs but also the console.log and console.warn messages you added to JavaScript files for debugging.
@@ -265,7 +289,8 @@ mkdir -p "output/$DOMAIN/$DATE"
 ./tools/proxy
 
 # 3. Start Lightpanda (run_in_background: true)
-cd ./browser && zig build run -- serve --log_level debug --http_proxy http://127.0.0.1:3000 --insecure_disable_tls_host_verification 2>&1 | tee "./output/$DOMAIN/$DATE/lightpanda.log"
+V8_PREBUILT=$(ls /debug/browser/.lp-cache/prebuilt-v8/libc_v8_*.a | head -1)
+cd ./browser && zig build -Dprebuilt_v8_path="$V8_PREBUILT" run -- serve --log_level debug --http_proxy http://127.0.0.1:3000 --insecure_disable_tls_host_verification 2>&1 | tee "./output/$DOMAIN/$DATE/lightpanda.log"
 
 # 4. Dump with Lightpanda
 ./tools/cdpcli --sleep 5 dump https://example.com 2> "output/$DOMAIN/$DATE/lightpanda.html"
@@ -321,11 +346,13 @@ Quick start:
 cd wpt && python3 wpt serve
 
 # 2a. Run a single test directly (no CDP server needed) — fastest for debugging
-cd browser && zig build run -- fetch --dump wpt "http://web-platform.test:8000/dom/nodes/CharacterData-appendChild.html"
+V8_PREBUILT=$(ls /debug/browser/.lp-cache/prebuilt-v8/libc_v8_*.a | head -1)
+cd browser && zig build -Dprebuilt_v8_path="$V8_PREBUILT" run -- fetch --dump wpt "http://web-platform.test:8000/dom/nodes/CharacterData-appendChild.html"
 # Outputs JSON to stdout with per-subtest pass/fail/message. Logs go to stderr.
 
 # 2b. Or start Lightpanda as a CDP server to use wptrunner (run_in_background: true)
-cd browser && zig build run -- serve --insecure_disable_tls_host_verification
+V8_PREBUILT=$(ls /debug/browser/.lp-cache/prebuilt-v8/libc_v8_*.a | head -1)
+cd browser && zig build -Dprebuilt_v8_path="$V8_PREBUILT" run -- serve --insecure_disable_tls_host_verification
 
 # 3. Run a specific test with wptrunner
 tools/wptrunner Node-childNodes.html
