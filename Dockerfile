@@ -73,7 +73,7 @@ USER debug
 RUN curl https://sh.rustup.rs -sSf | sh -s -- --profile minimal -y
 ENV PATH="/home/debug/.cargo/bin:${PATH}"
 
-RUN sudo npm install -g js-beautify
+RUN sudo npm install -g @biomejs/biome@2.5.0
 
 FROM tools
 USER debug
