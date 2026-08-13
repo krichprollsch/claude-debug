@@ -12,7 +12,7 @@ FROM base AS zig
 ARG ARCH=x86_64
 ARG MINISIG=0.12
 ARG ZIG_MINISIG=RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U
-ARG ZIG=0.15.2
+ARG ZIG=0.16.0
 
 # install minisig
 RUN curl --fail -L -O https://github.com/jedisct1/minisign/releases/download/${MINISIG}/minisign-${MINISIG}-linux.tar.gz && \
