@@ -99,33 +99,36 @@ You can edit these cached files to debug the results.
 
 ### Build Lightpanda with prebuilt V8 (skip the 10+ min V8 build)
 
-Building V8 from source takes 10+ minutes. Use `make download-v8` (from `browser/`)
-to fetch the matching prebuilt archive into `.lp-cache/prebuilt-v8/` — see
-[PR #2517](https://github.com/lightpanda-io/browser/pull/2517).
+Building V8 from source takes 10+ minutes. On Linux, use the fast debug build with
+shared V8: first ensure the prebuilt shared V8 is present with `make download-v8-shared`
+(from `browser/`), then build with `zig build -Ddev_fast`.
 
 ```bash
-cd ./browser && make download-v8
+cd ./browser && make download-v8-shared
 ```
 
-After download, two ways to use it:
+Then use `-Ddev_fast` on every `zig build` invocation (`run`, `test`, …):
 
-- **Via `make` targets** (`make build-dev`, `make test`, `make run`, …): the Makefile
-  auto-detects `.lp-cache/prebuilt-v8/<archive>` and injects `-Dprebuilt_v8_path=...`
-  into `ZIGFLAGS` for you. No flag needed.
-- **Via raw `zig build`**: you MUST pass `-Dprebuilt_v8_path=<absolute path to libc_v8.a>`
-  explicitly. Compute the path from `.lp-cache/prebuilt-v8/libc_v8_<version>_<os>_<arch>.a`
-  (e.g. `libc_v8_14.0.365.4_linux_x86_64.a`). A quick shell helper:
-  ```bash
-  V8_PREBUILT=$(ls /debug/browser/.lp-cache/prebuilt-v8/libc_v8_*.a | head -1)
-  ```
+```bash
+cd ./browser && zig build -Ddev_fast run -- serve ...
+cd ./browser && zig build -Ddev_fast test
+```
+
+`-Ddev_fast` is Linux-only and Debug-only. It implies `-Dshared_v8` and
+`-Duse_llvm=false` (self-hosted backend) and auto-detects the shared V8 library
+in `.lp-cache/` — no `-Dprebuilt_v8_path` flag needed.
+
+Fallback (non-Linux or release builds): `make download-v8` fetches the static
+prebuilt archive into `.lp-cache/prebuilt-v8/`; `make` targets (`make build-dev`,
+`make test`, `make run`, …) auto-detect it, while raw `zig build` requires
+`-Dprebuilt_v8_path=<absolute path to libc_v8.a>`.
 
 ### Start Lightpanda browser
 
 Use the Bash tool with `run_in_background: true` to start Lightpanda:
 ```bash
 # run_in_background: true
-V8_PREBUILT=$(ls /debug/browser/.lp-cache/prebuilt-v8/libc_v8_*.a | head -1)
-cd ./browser && zig build -Dprebuilt_v8_path="$V8_PREBUILT" run -- serve --log_level debug --http_proxy http://127.0.0.1:3000 --insecure_disable_tls_host_verification
+cd ./browser && zig build -Ddev_fast run -- serve --log_level debug --http_proxy http://127.0.0.1:3000 --insecure_disable_tls_host_verification
 ```
 
 To save logs to the output directory:
@@ -134,8 +137,7 @@ To save logs to the output directory:
 DOMAIN="example.com"
 DATE=$(date +%Y%m%d)
 mkdir -p "./output/$DOMAIN/$DATE"
-V8_PREBUILT=$(ls /debug/browser/.lp-cache/prebuilt-v8/libc_v8_*.a | head -1)
-cd ./browser && zig build -Dprebuilt_v8_path="$V8_PREBUILT" run -- serve --log_level debug --http_proxy http://127.0.0.1:3000 --insecure_disable_tls_host_verification 2>&1 | tee "./output/$DOMAIN/$DATE/lightpanda.log"
+cd ./browser && zig build -Ddev_fast run -- serve --log_level debug --http_proxy http://127.0.0.1:3000 --insecure_disable_tls_host_verification 2>&1 | tee "./output/$DOMAIN/$DATE/lightpanda.log"
 ```
 
 The stderr will display internal logs but also the console.log and console.warn messages you added to JavaScript files for debugging.
@@ -289,8 +291,7 @@ mkdir -p "output/$DOMAIN/$DATE"
 ./tools/proxy
 
 # 3. Start Lightpanda (run_in_background: true)
-V8_PREBUILT=$(ls /debug/browser/.lp-cache/prebuilt-v8/libc_v8_*.a | head -1)
-cd ./browser && zig build -Dprebuilt_v8_path="$V8_PREBUILT" run -- serve --log_level debug --http_proxy http://127.0.0.1:3000 --insecure_disable_tls_host_verification 2>&1 | tee "./output/$DOMAIN/$DATE/lightpanda.log"
+cd ./browser && zig build -Ddev_fast run -- serve --log_level debug --http_proxy http://127.0.0.1:3000 --insecure_disable_tls_host_verification 2>&1 | tee "./output/$DOMAIN/$DATE/lightpanda.log"
 
 # 4. Dump with Lightpanda
 ./tools/cdpcli --sleep 5 dump https://example.com 2> "output/$DOMAIN/$DATE/lightpanda.html"
@@ -346,13 +347,11 @@ Quick start:
 cd wpt && python3 wpt serve
 
 # 2a. Run a single test directly (no CDP server needed) — fastest for debugging
-V8_PREBUILT=$(ls /debug/browser/.lp-cache/prebuilt-v8/libc_v8_*.a | head -1)
-cd browser && zig build -Dprebuilt_v8_path="$V8_PREBUILT" run -- fetch --dump wpt "http://web-platform.test:8000/dom/nodes/CharacterData-appendChild.html"
+cd browser && zig build -Ddev_fast run -- fetch --dump wpt "http://web-platform.test:8000/dom/nodes/CharacterData-appendChild.html"
 # Outputs JSON to stdout with per-subtest pass/fail/message. Logs go to stderr.
 
 # 2b. Or start Lightpanda as a CDP server to use wptrunner (run_in_background: true)
-V8_PREBUILT=$(ls /debug/browser/.lp-cache/prebuilt-v8/libc_v8_*.a | head -1)
-cd browser && zig build -Dprebuilt_v8_path="$V8_PREBUILT" run -- serve --insecure_disable_tls_host_verification
+cd browser && zig build -Ddev_fast run -- serve --insecure_disable_tls_host_verification
 
 # 3. Run a specific test with wptrunner
 tools/wptrunner Node-childNodes.html
